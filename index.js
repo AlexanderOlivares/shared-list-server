@@ -6,6 +6,9 @@ const pool = require("./db");
 app.use(cors());
 app.use(express.json());
 
+// register and login routes
+app.use("/auth", require("./routes/jwtAuth"));
+
 // create item
 app.post("/items", async (req, res) => {
   try {
