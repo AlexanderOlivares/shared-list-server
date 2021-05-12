@@ -9,6 +9,9 @@ app.use(express.json());
 // register and login routes
 app.use("/auth", require("./routes/jwtAuth"));
 
+// dashboard route
+app.use("/dashboard", require("./routes/dashboard"));
+
 // create item
 app.post("/items", async (req, res) => {
   try {
