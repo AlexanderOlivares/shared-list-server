@@ -14,7 +14,7 @@ router.post("/register", validInfo, async (req, res) => {
     ]);
 
     if (user.rows.length !== 0) {
-      return res.status(401).send("User already exists.");
+      return res.status(401).json("User already exists.");
     }
 
     // bcrypt users password
@@ -74,7 +74,7 @@ router.post("/login", validInfo, async (req, res) => {
 
 router.get("/is-verified", authorization, async (req, res) => {
   try {
-    res.json("verified :D");
+    res.json(true);
   } catch (err) {
     res.status(500).send("Server Error");
     console.error(err.message);
