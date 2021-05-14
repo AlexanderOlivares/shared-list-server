@@ -53,7 +53,7 @@ router.post("/login", validInfo, async (req, res) => {
       return res.status(401).json("Email or password is incorrect");
     }
 
-    // check if incoing password is same as db password
+    // check if incoming password is same as db password
     const validPassword = await bcrypt.compare(
       password,
       user.rows[0].user_password
