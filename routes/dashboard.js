@@ -50,4 +50,23 @@ router.put("/items/:id", authorization, async (req, res) => {
   }
 });
 
+// delete item
+router.delete("/items/:id", authorization, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleteItem = await pool.query(
+      "DELETE FROM list_item WHERE item_id = $1 AND user_id = $2 RETURNING *",
+      [id, req.user.id]
+    );
+
+    if (deleteItem.rows.length === 0) {
+      return res.json("You are not authorized to delete this item");
+    }
+
+    res.json("Item deleted");
+  } catch (err) {
+    console.error(err.message);
+  }
+});
+
 module.exports = router;
