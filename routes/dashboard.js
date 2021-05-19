@@ -6,13 +6,15 @@ const authorization = require("../middleware/authorization");
 router.get("/", authorization, async (req, res) => {
   try {
     const user = await pool.query(
-      "SELECT users.user_name, list_item.item_id, list_item.description FROM users LEFT JOIN list_item ON users.user_id = list_item.user_id WHERE users.user_id = $1",
+      // "SELECT users.user_name, users.guests_email, list_item.item_id, list_item.description FROM users LEFT JOIN list_item ON users.user_id = list_item.user_id WHERE users.user_id = $1 OR users.guests_email = $2",
+      "SELECT users.user_name, users.guests_email, list_item.item_id, list_item.description FROM users LEFT JOIN list_item ON users.user_id = list_item.user_id WHERE users.user_id = $1 OR list_item.use_id = ",
+      // [req.user.id]
       [req.user.id]
     );
     res.json(user.rows);
   } catch (err) {
     console.error(err.message);
-    res.status(500).json("Server Error");
+    res.status(500).json(err.message);
   }
 });
 

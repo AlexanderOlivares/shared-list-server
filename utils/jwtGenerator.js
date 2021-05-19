@@ -6,6 +6,7 @@ function jwtGenerator(user_id) {
   const payload = {
     user: {
       id: user_id,
+      guests: guests_email,
     },
   };
 
