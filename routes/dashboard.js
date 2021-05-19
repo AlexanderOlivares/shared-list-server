@@ -4,12 +4,13 @@ const authorization = require("../middleware/authorization");
 
 // all items and name
 router.get("/", authorization, async (req, res) => {
+  console.log(req.user.guests);
+  console.log(req.user.email);
   try {
     const user = await pool.query(
       // "SELECT users.user_name, users.guests_email, list_item.item_id, list_item.description FROM users LEFT JOIN list_item ON users.user_id = list_item.user_id WHERE users.user_id = $1 OR users.guests_email = $2",
-      "SELECT users.user_name, users.guests_email, list_item.item_id, list_item.description FROM users LEFT JOIN list_item ON users.user_id = list_item.user_id WHERE users.user_id = $1 OR list_item.use_id = ",
-      // [req.user.id]
-      [req.user.id]
+      "SELECT description FROM list_item WHERE creator = $1 OR editors = $1",
+      [req.user.email]
     );
     res.json(user.rows);
   } catch (err) {
@@ -23,8 +24,8 @@ router.post("/items", authorization, async (req, res) => {
   try {
     const { description } = req.body;
     const newItem = await pool.query(
-      "INSERT INTO list_item (user_id, description) VALUES($1, $2) RETURNING *",
-      [req.user.id, description]
+      "INSERT INTO list_item (user_id, description, creator, editors) VALUES($1, $2, $3, $4) RETURNING *",
+      [req.user.id, description, req.user.email, req.user.guests]
     );
     res.json(newItem.rows);
   } catch (err) {

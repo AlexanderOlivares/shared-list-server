@@ -4,8 +4,9 @@ CREATE TABLE list_item(
   item_id SERIAL,
   user_id uuid,
   description VARCHAR(255) NOT NULL,
-  PRIMARY KEY (item_id),
-  FOREIGN KEY (user_id) REFERENCES users (user_id)
+  creator VARCHAR(255) NOT NULL,
+  editors VARCHAR(255),
+  PRIMARY KEY (item_id) 
 );
 
 CREATE TABLE users(
@@ -15,4 +16,4 @@ CREATE TABLE users(
   user_password  VARCHAR(255) NOT NULL,
   guests_email VARCHAR(255),
   PRIMARY KEY (user_id)
-)
+);

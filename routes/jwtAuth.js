@@ -29,7 +29,10 @@ router.post("/register", validInfo, async (req, res) => {
     );
 
     // generated jwt token
-    const token = jwtGenerator(newUser.rows[0].user_id);
+    const token = jwtGenerator(
+      newUser.rows[0].user_id,
+      newUser.rows[0].guests_email
+    );
 
     res.json({ token });
   } catch (err) {
@@ -38,6 +41,7 @@ router.post("/register", validInfo, async (req, res) => {
   }
 });
 
+// for registering from an invitation
 router.post("/guest-register", validInfo, async (req, res) => {
   try {
     const { name, email, password, guests_email } = req.body;
@@ -61,7 +65,11 @@ router.post("/guest-register", validInfo, async (req, res) => {
     );
 
     // generated jwt token
-    const token = jwtGenerator(newUser.rows[0].user_id);
+    const token = jwtGenerator(
+      newUser.rows[0].user_id,
+      newUser.rows[0].user_email,
+      newUser.rows[0].guests_email
+    );
 
     res.json({ token });
   } catch (err) {
@@ -95,8 +103,17 @@ router.post("/login", validInfo, async (req, res) => {
       return res.status(401).json("Email or password is incorrect");
     }
 
+    // check that this querey is working !!!
+    const editor = await pool.query(
+      "SELECT guests_email FROM users WHERE user_email = $1",
+      [email]
+    );
+
+    const guests_email = editor.rows[0].guests_email;
+    console.log(guests_email);
+
     // give out the jwt
-    const token = jwtGenerator(user.rows[0].user_id);
+    const token = jwtGenerator(user.rows[0].user_id, guests_email);
     res.json({ token });
   } catch (err) {
     res.status(500).send("Server Error");
