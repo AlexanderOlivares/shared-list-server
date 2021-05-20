@@ -5,6 +5,8 @@ const jwtGenerator = require("../utils/jwtGenerator");
 const validInfo = require("../middleware/validInfo");
 const authorization = require("../middleware/authorization");
 
+// fix register and login routes to add user email into payload
+
 // register route
 router.post("/register", validInfo, async (req, res) => {
   try {
@@ -31,6 +33,7 @@ router.post("/register", validInfo, async (req, res) => {
     // generated jwt token
     const token = jwtGenerator(
       newUser.rows[0].user_id,
+      newUser.rows[0].user_email,
       newUser.rows[0].guests_email
     );
 
@@ -82,7 +85,9 @@ router.post("/guest-register", validInfo, async (req, res) => {
 router.post("/login", validInfo, async (req, res) => {
   try {
     // destructure req.body
-    const { email, password } = req.body;
+    const { email, password, guests_email } = req.body;
+    //const { email, password } = req.body;
+    console.log(email, guests_email);
 
     // check if user doesn't exist
     const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [
@@ -109,11 +114,10 @@ router.post("/login", validInfo, async (req, res) => {
       [email]
     );
 
-    const guests_email = editor.rows[0].guests_email;
-    console.log(guests_email);
+    const editorGuests_email = editor.rows[0].guests_email;
 
     // give out the jwt
-    const token = jwtGenerator(user.rows[0].user_id, guests_email);
+    const token = jwtGenerator(user.rows[0].user_id, email, editorGuests_email);
     res.json({ token });
   } catch (err) {
     res.status(500).send("Server Error");

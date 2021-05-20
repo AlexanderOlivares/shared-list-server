@@ -9,7 +9,7 @@ router.get("/", authorization, async (req, res) => {
   try {
     const user = await pool.query(
       // "SELECT users.user_name, users.guests_email, list_item.item_id, list_item.description FROM users LEFT JOIN list_item ON users.user_id = list_item.user_id WHERE users.user_id = $1 OR users.guests_email = $2",
-      "SELECT description FROM list_item WHERE creator = $1 OR editors = $1",
+      "SELECT item_id, description FROM list_item WHERE creator = $1 OR editors = $1",
       [req.user.email]
     );
     res.json(user.rows);
@@ -38,9 +38,10 @@ router.put("/items/:id", authorization, async (req, res) => {
   try {
     const { id } = req.params;
     const { description } = req.body;
+    console.log(id, description, req.user.email, req.user.guests);
     const updateItem = await pool.query(
-      "UPDATE list_item SET description = $1 WHERE item_id = $2 AND user_id = $3 RETURNING *",
-      [description, id, req.user.id]
+      "UPDATE list_item SET description = $1 WHERE (item_id = $2) AND (editors = $3 OR editors = $4 OR creator = $3 OR creator = $4) RETURNING *",
+      [description, id, req.user.guests, req.user.email]
     );
 
     if (updateItem.rows.length === 0) {
@@ -58,9 +59,10 @@ router.delete("/items/:id", authorization, async (req, res) => {
   try {
     const { id } = req.params;
     const deleteItem = await pool.query(
-      "DELETE FROM list_item WHERE item_id = $1 AND user_id = $2 RETURNING *",
-      [id, req.user.id]
+      "DELETE FROM list_item WHERE (item_id = $1) AND (editors = $2 OR editors = $3 OR creator = $2 OR creator = $3) RETURNING *",
+      [id, req.user.email, req.user.guests]
     );
+    console.log(deleteItem.rows);
 
     if (deleteItem.rows.length === 0) {
       return res.json("You are not authorized to delete this item");
