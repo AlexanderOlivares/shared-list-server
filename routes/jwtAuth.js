@@ -26,14 +26,16 @@ router.post("/register", validInfo, async (req, res) => {
 
     // enter new user into db
     const newUser = await pool.query(
-      "INSERT INTO users (user_name, user_email, user_password, guests_email) VALUES ($1, $2, $3, $4) RETURNING *",
-      [name, email, bcryptPassword, guests_email]
+      "INSERT INTO users (user_name, user_email, user_password) VALUES ($1, $2, $3) RETURNING *",
+      [name, email, bcryptPassword]
     );
 
     // generated jwt token
     const token = jwtGenerator(
       newUser.rows[0].user_id,
+      newUser.rows[0].user_name,
       newUser.rows[0].user_email,
+      newUser.rows[0].guests_name,
       newUser.rows[0].guests_email
     );
 
@@ -47,7 +49,7 @@ router.post("/register", validInfo, async (req, res) => {
 // for registering from an invitation
 router.post("/guest-register", validInfo, async (req, res) => {
   try {
-    const { name, email, password, guests_email } = req.body;
+    const { name, email, password, guests_email, guests_name } = req.body;
     const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [
       email,
     ]);
@@ -63,14 +65,16 @@ router.post("/guest-register", validInfo, async (req, res) => {
 
     // enter new user into db
     const newUser = await pool.query(
-      "INSERT INTO users (user_name, user_email, user_password, guests_email) VALUES ($1, $2, $3, $4) RETURNING *",
-      [name, email, bcryptPassword, guests_email]
+      "INSERT INTO users (user_name, user_email, user_password, guests_email, guests_name) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [name, email, bcryptPassword, guests_email, guests_name]
     );
 
     // generated jwt token
     const token = jwtGenerator(
       newUser.rows[0].user_id,
+      newUser.rows[0].user_name,
       newUser.rows[0].user_email,
+      newUser.rows[0].guests_name,
       newUser.rows[0].guests_email
     );
 
@@ -84,10 +88,12 @@ router.post("/guest-register", validInfo, async (req, res) => {
 // login route
 router.post("/login", validInfo, async (req, res) => {
   try {
-    // destructure req.body
-    const { email, password, guests_email } = req.body;
+    // destructure req.b
+    const { name, email, password, guests_email, guests_name } = req.body;
+
+    //const { email, password, guests_email } = req.body;
     //const { email, password } = req.body;
-    console.log(email, guests_email);
+    console.log(email, name);
 
     // check if user doesn't exist
     const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [
@@ -117,7 +123,15 @@ router.post("/login", validInfo, async (req, res) => {
     const editorGuests_email = editor.rows[0].guests_email;
 
     // give out the jwt
-    const token = jwtGenerator(user.rows[0].user_id, email, editorGuests_email);
+    //const token = jwtGenerator(user.rows[0].user_id, email, editorGuests_email);
+
+    const token = jwtGenerator(
+      user.rows[0].user_id,
+      user.rows[0].user_name,
+      user.rows[0].user_email,
+      user.rows[0].guests_name,
+      editorGuests_email
+    );
     res.json({ token });
   } catch (err) {
     res.status(500).send("Server Error");
