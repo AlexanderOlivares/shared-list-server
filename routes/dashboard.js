@@ -8,10 +8,8 @@ router.get("/", authorization, async (req, res) => {
   console.log(req.user.guests);
   try {
     const user = await pool.query(
-      // "SELECT item_id, description FROM list_item WHERE creator = $1 OR editors = $1",
-      // [req.user.email]
-      "SELECT creator_name, editors_name, item_id, description FROM list_item WHERE creator = $1 OR editors = $1",
-      [req.user.email] //, req.user.guests]
+      "SELECT creator, creator_name, editors_name, item_id, description FROM list_item WHERE creator = $1 OR editors = $1",
+      [req.user.email]
     );
     res.json(user.rows);
   } catch (err) {
@@ -70,13 +68,28 @@ router.delete("/items/:id", authorization, async (req, res) => {
       "DELETE FROM list_item WHERE (item_id = $1) AND (editors = $2 OR editors = $3 OR creator = $2 OR creator = $3) RETURNING *",
       [id, req.user.email, req.user.guests]
     );
-    console.log(deleteItem.rows);
+    //console.log(deleteItem.rows);
 
     if (deleteItem.rows.length === 0) {
       return res.json("You are not authorized to delete this item");
     }
 
     res.json("Item deleted");
+  } catch (err) {
+    console.error(err.message);
+  }
+});
+
+router.put("/invite", authorization, async (req, res) => {
+  try {
+    const { editors_name, editors, creator } = req.body;
+    console.log(editors_name, editors, creator);
+    const addEditorToUser = await pool.query(
+      "UPDATE list_item SET editors = $1, editors_name = $2 WHERE creator = $3",
+      [editors, editors_name, creator]
+    );
+
+    res.json(`${editors_name} can now make edits`);
   } catch (err) {
     console.error(err.message);
   }
