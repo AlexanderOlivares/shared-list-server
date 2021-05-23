@@ -8,9 +8,9 @@ const authorization = require("../middleware/authorization");
 // fix register and login routes to add user email into payload
 
 // register route
-router.post("/register", validInfo, async (req, res) => {
+router.post("/register/", validInfo, async (req, res) => {
   try {
-    const { name, email, password, guests_email } = req.body;
+    const { name, email, password } = req.body;
     const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [
       email,
     ]);
@@ -47,43 +47,49 @@ router.post("/register", validInfo, async (req, res) => {
 });
 
 // for registering from an invitation
-router.post("/guest-register", validInfo, async (req, res) => {
-  try {
-    const { name, email, password, guests_email, guests_name } = req.body;
-    const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [
-      email,
-    ]);
+router.post(
+  "/guest-register/:guestsemail/:guestsname",
+  validInfo,
+  async (req, res) => {
+    try {
+      const { guestsemail, guestsname } = req.params;
+      const { name, email, password } = req.body;
+      const user = await pool.query(
+        "SELECT * FROM users WHERE user_email = $1",
+        [email]
+      );
 
-    if (user.rows.length !== 0) {
-      return res.status(401).json("User already exists.");
+      if (user.rows.length !== 0) {
+        return res.status(401).json("User already exists.");
+      }
+
+      // bcrypt users password
+      const saltRound = 10;
+      const salt = await bcrypt.genSalt(saltRound);
+      const bcryptPassword = await bcrypt.hash(password, salt);
+
+      // enter new user into db
+      const newUser = await pool.query(
+        "INSERT INTO users (user_name, user_email, user_password, guests_email, guests_name) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [name, email, bcryptPassword, guestsemail, guestsname]
+      );
+
+      // generated jwt token
+      const token = jwtGenerator(
+        newUser.rows[0].user_id,
+        newUser.rows[0].user_name,
+        newUser.rows[0].user_email,
+        newUser.rows[0].guests_name,
+        newUser.rows[0].guests_email
+      );
+
+      res.json({ token });
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
     }
-
-    // bcrypt users password
-    const saltRound = 10;
-    const salt = await bcrypt.genSalt(saltRound);
-    const bcryptPassword = await bcrypt.hash(password, salt);
-
-    // enter new user into db
-    const newUser = await pool.query(
-      "INSERT INTO users (user_name, user_email, user_password, guests_email, guests_name) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [name, email, bcryptPassword, guests_email, guests_name]
-    );
-
-    // generated jwt token
-    const token = jwtGenerator(
-      newUser.rows[0].user_id,
-      newUser.rows[0].user_name,
-      newUser.rows[0].user_email,
-      newUser.rows[0].guests_name,
-      newUser.rows[0].guests_email
-    );
-
-    res.json({ token });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
   }
-});
+);
 
 // login route
 router.post("/login", validInfo, async (req, res) => {
