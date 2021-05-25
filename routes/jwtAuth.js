@@ -5,8 +5,6 @@ const jwtGenerator = require("../utils/jwtGenerator");
 const validInfo = require("../middleware/validInfo");
 const authorization = require("../middleware/authorization");
 
-// fix register and login routes to add user email into payload
-
 // register route
 router.post("/register/", validInfo, async (req, res) => {
   try {
@@ -52,7 +50,10 @@ router.post(
   validInfo,
   async (req, res) => {
     try {
-      const { guestsemail, guestsname } = req.params;
+      let { guestsemail, guestsname } = req.params;
+
+      guestsname = guestsname.replace(/-/g, " ");
+
       const { name, email, password } = req.body;
       const user = await pool.query(
         "SELECT * FROM users WHERE user_email = $1",
@@ -94,12 +95,7 @@ router.post(
 // login route
 router.post("/login", validInfo, async (req, res) => {
   try {
-    // destructure req.b
     const { name, email, password, guests_email, guests_name } = req.body;
-
-    //const { email, password, guests_email } = req.body;
-    //const { email, password } = req.body;
-    console.log(email, name);
 
     // check if user doesn't exist
     const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [
@@ -127,9 +123,6 @@ router.post("/login", validInfo, async (req, res) => {
     );
 
     const editorGuests_email = editor.rows[0].guests_email;
-
-    // give out the jwt
-    //const token = jwtGenerator(user.rows[0].user_id, email, editorGuests_email);
 
     const token = jwtGenerator(
       user.rows[0].user_id,

@@ -2,7 +2,7 @@ const router = require("express").Router();
 const pool = require("../db");
 const authorization = require("../middleware/authorization");
 
-// all items and name
+// all items
 router.get("/", authorization, async (req, res) => {
   console.log(req.user.email);
   console.log(req.user.guests);
@@ -10,6 +10,21 @@ router.get("/", authorization, async (req, res) => {
     const user = await pool.query(
       "SELECT creator, creator_name, editors_name, item_id, description FROM list_item WHERE creator = $1 OR editors = $1",
       [req.user.email]
+    );
+    res.json(user.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json(err.message);
+  }
+});
+
+// test to get just user name
+router.get("/name-email", authorization, async (req, res) => {
+  console.log(req.user.id);
+  try {
+    const user = await pool.query(
+      "SELECT user_name, user_email, guests_name FROM users WHERE user_id = $1",
+      [req.user.id]
     );
     res.json(user.rows);
   } catch (err) {
@@ -68,7 +83,6 @@ router.delete("/items/:id", authorization, async (req, res) => {
       "DELETE FROM list_item WHERE (item_id = $1) AND (editors = $2 OR editors = $3 OR creator = $2 OR creator = $3) RETURNING *",
       [id, req.user.email, req.user.guests]
     );
-    //console.log(deleteItem.rows);
 
     if (deleteItem.rows.length === 0) {
       return res.json("You are not authorized to delete this item");
@@ -81,16 +95,25 @@ router.delete("/items/:id", authorization, async (req, res) => {
 });
 
 router.put("/invite", authorization, async (req, res) => {
+  const { editors_name, editors, creator } = req.body;
   try {
-    const { editors_name, editors, creator } = req.body;
     console.log(editors_name, editors, creator);
-    const addEditorToUser = await pool.query(
+    const addEditorsToList_item = await pool.query(
       "UPDATE list_item SET editors = $1, editors_name = $2 WHERE creator = $3",
       [editors, editors_name, creator]
     );
 
     res.json(`${editors_name} can now make edits`);
   } catch (err) {
+    console.error(err.message);
+  }
+
+  try {
+    const updateUsersTable = await pool.query(
+      "UPDATE users SET guests_email = $1, guests_name = $2 WHERE user_email = $3",
+      [editors, editors_name, creator]
+    );
+  } catch (error) {
     console.error(err.message);
   }
 });
