@@ -95,7 +95,10 @@ router.delete("/items/:id", authorization, async (req, res) => {
 });
 
 router.put("/invite", authorization, async (req, res) => {
-  const { editors_name, editors, creator } = req.body;
+  let { editors_name, editors, creator } = req.body;
+  // decode creator's email
+  let buff = Buffer.from(creator, "base64");
+  creator = buff.toString("utf-8");
   try {
     console.log(editors_name, editors, creator);
     const addEditorsToList_item = await pool.query(
