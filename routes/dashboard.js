@@ -4,8 +4,6 @@ const authorization = require("../middleware/authorization");
 
 // all items
 router.get("/", authorization, async (req, res) => {
-  console.log(req.user.email);
-  console.log(req.user.guests);
   try {
     const user = await pool.query(
       "SELECT creator, creator_name, editors_name, item_id, description FROM list_item WHERE creator = $1 OR editors = $1",
@@ -20,7 +18,6 @@ router.get("/", authorization, async (req, res) => {
 
 // test to get just user name
 router.get("/name-email", authorization, async (req, res) => {
-  console.log(req.user.id);
   try {
     const user = await pool.query(
       "SELECT user_name, user_email, guests_name FROM users WHERE user_id = $1",
@@ -59,14 +56,13 @@ router.put("/items/:id", authorization, async (req, res) => {
   try {
     const { id } = req.params;
     const { description } = req.body;
-    console.log(id, description, req.user.email, req.user.guests);
     const updateItem = await pool.query(
       "UPDATE list_item SET description = $1 WHERE (item_id = $2) AND (editors = $3 OR editors = $4 OR creator = $3 OR creator = $4) RETURNING *",
       [description, id, req.user.guests, req.user.email]
     );
 
     if (updateItem.rows.length === 0) {
-      return res.json("this is not your item to change");
+      return res.json("Not authorized to edit this item");
     }
 
     res.json("item updated");
@@ -100,7 +96,6 @@ router.put("/invite", authorization, async (req, res) => {
   let buff = Buffer.from(creator, "base64");
   creator = buff.toString("utf-8");
   try {
-    console.log(editors_name, editors, creator);
     const addEditorsToList_item = await pool.query(
       "UPDATE list_item SET editors = $1, editors_name = $2 WHERE creator = $3",
       [editors, editors_name, creator]

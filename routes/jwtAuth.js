@@ -95,7 +95,7 @@ router.post(
 // login route
 router.post("/login", validInfo, async (req, res) => {
   try {
-    const { name, email, password, guests_email, guests_name } = req.body;
+    const { email, password } = req.body;
 
     // check if user doesn't exist
     const user = await pool.query("SELECT * FROM users WHERE user_email = $1", [
@@ -116,7 +116,6 @@ router.post("/login", validInfo, async (req, res) => {
       return res.status(401).json("Email or password is incorrect");
     }
 
-    // check that this querey is working !!!
     const editor = await pool.query(
       "SELECT guests_email FROM users WHERE user_email = $1",
       [email]

@@ -47,8 +47,6 @@ app.post("/request-password-reset", async (req, res) => {
     const token = jwt.sign(payload, secret, { expiresIn: "15m" });
     const link = `http://localhost:3000/reset-password/${userid}/${token}`;
 
-    console.log(link);
-
     res.json([user.rows, link]);
   } catch (err) {
     res.status(500).send("Server Error");
