@@ -5,9 +5,15 @@ const cors = require("cors");
 const pool = require("./db");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const path = require("path");
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "client/build")));
+}
 
 // register and login routes
 app.use("/auth", require("./routes/jwtAuth"));
@@ -105,6 +111,10 @@ app.put("/resetpassword/:id/:token", async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log("Listening on port 5000");
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "client/build/index.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}`);
 });
